@@ -60,9 +60,9 @@ function Workstation({ status }: { status?: AgentVisualStatus }) {
 }
 
 function AgentWorker({ status, phase }: { status?: AgentVisualStatus; phase: number }) {
-  const root = useRef<Group>(null);
-  const leftArm = useRef<Group>(null);
-  const rightArm = useRef<Group>(null);
+  const root = useRef<Group | null>(null);
+  const leftArm = useRef<Group | null>(null);
+  const rightArm = useRef<Group | null>(null);
   const working = status === "sedang_bekerja" || status === "review";
   const attention = status === "perlu_perhatian";
   const color = statusColor(status);
@@ -185,7 +185,7 @@ function RoomMesh({
 }
 
 function ChiefAvatar() {
-  const root = useRef<Group>(null);
+  const root = useRef<Group | null>(null);
 
   useFrame(({ clock }) => {
     if (!root.current) return;
@@ -213,7 +213,7 @@ function ChiefAvatar() {
 }
 
 function DataCourier() {
-  const root = useRef<Group>(null);
+  const root = useRef<Group | null>(null);
 
   useFrame(({ clock }) => {
     if (!root.current) return;
