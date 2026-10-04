@@ -1,6 +1,17 @@
--- Applied to project wsewvhsnvgtksrhutsuw as migration foundation_core_schema.
--- Canonical source: this file. Destructive rollback requires explicit owner approval.
--- See Supabase migration history for version 20261004065419.
-
--- The live schema was created through the Supabase migration API.
--- For a fresh environment, use the project bootstrap SQL in docs/database-foundation.sql.
+-- Migration manifest for the already-applied live migration:
+-- version: 20261004065419
+-- name: foundation_core_schema
+-- project: wsewvhsnvgtksrhutsuw
+--
+-- The live migration was applied through the Supabase Migration API and is
+-- recorded in Supabase migration history. This repository file intentionally
+-- acts as a manifest until the live schema is pulled/exported into a complete
+-- reproducible SQL migration.
+--
+-- IMPORTANT:
+-- Do not run a hand-written replacement against production.
+-- Use Supabase migration history + schema pull/export before provisioning
+-- another environment.
+--
+-- Manual destructive rollback is documented separately under supabase/rollback/
+-- and requires explicit owner approval.
