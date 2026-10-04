@@ -1,4 +1,6 @@
 import { requireProfile } from "@/lib/auth/require-profile";
+import { OfficeExperience } from "@/components/office/office-experience";
+import type { OfficeRoom } from "@/components/office/types";
 
 function rupiah(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -25,6 +27,8 @@ export default async function CommandCenterPage() {
     approvalsRes,
     revenueRes,
     agentsRes,
+    reviewRes,
+    financePendingRes,
   ] = await Promise.all([
     supabase.from("orders").select("*", { count: "exact", head: true }).neq("status", "dibatalkan"),
     supabase.from("leads").select("*", { count: "exact", head: true }).in("status", ["lead_baru", "konsultasi", "penawaran", "menunggu_dp"]),
@@ -32,6 +36,8 @@ export default async function CommandCenterPage() {
     supabase.from("approvals").select("*", { count: "exact", head: true }).eq("status", "menunggu"),
     supabase.from("transactions").select("amount").eq("status", "terverifikasi").gte("occurred_at", monthStart).in("type", ["pemasukan", "dp", "pelunasan"]),
     supabase.from("ai_agents").select("id, name, department, status, owner_only").order("department"),
+    supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["revisi", "handover"]),
+    supabase.from("transactions").select("*", { count: "exact", head: true }).eq("status", "pending"),
   ]);
 
   const revenue = (revenueRes.data ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
@@ -41,6 +47,15 @@ export default async function CommandCenterPage() {
     { label: "Lead custom", value: String(leadsRes.count ?? 0), note: "Pipeline berjalan" },
     { label: "Proyek aktif", value: String(projectsRes.count ?? 0), note: "Belum selesai" },
     { label: "Approval", value: String(approvalsRes.count ?? 0), note: "Menunggu keputusan" },
+  ];
+
+  const rooms: OfficeRoom[] = [
+    { id: "sales", name: "Sales Room", href: "/sales", value: leadsRes.count ?? 0, label: "lead aktif" },
+    { id: "project", name: "Project Room", href: "/projects", value: projectsRes.count ?? 0, label: "proyek aktif" },
+    { id: "creative", name: "Creative Room", href: "/creative", value: 0, label: "siap menerima brief" },
+    { id: "finance", name: "Finance Room", href: "/finance", value: financePendingRes.count ?? 0, label: "transaksi pending" },
+    { id: "review", name: "Review Room", href: "/review", value: reviewRes.count ?? 0, label: "antrean review" },
+    { id: "owner", name: "Owner Room", href: profile.role === "owner" ? "/owner" : "/approval", value: approvalsRes.count ?? 0, label: profile.role === "owner" ? "approval menunggu" : "approval", alert: (approvalsRes.count ?? 0) > 0 },
   ];
 
   return (
@@ -54,8 +69,10 @@ export default async function CommandCenterPage() {
             dalam satu alur yang bisa diaudit.
           </p>
         </div>
-        <div className="hero-chip">PHASE A · FOUNDATION</div>
+        <div className="hero-chip">LIVE OFFICE · FOUNDATION ACTIVE</div>
       </section>
+
+      <OfficeExperience rooms={rooms} />
 
       <section className="metric-grid">
         {metrics.map((metric) => (
