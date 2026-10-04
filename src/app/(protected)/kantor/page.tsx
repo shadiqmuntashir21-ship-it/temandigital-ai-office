@@ -1,6 +1,6 @@
 import { requireProfile } from "@/lib/auth/require-profile";
 import { OfficeExperience } from "@/components/office/office-experience";
-import type { OfficeRoom } from "@/components/office/types";
+import type { AgentVisualStatus, OfficeRoom } from "@/components/office/types";
 
 function rupiah(value: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -28,7 +28,7 @@ export default async function CommandCenterPage() {
   const [snapshotRes, agentsRes, briefRes] = await Promise.all([
     supabase.rpc("command_center_snapshot", { p_month_start: monthStart }),
     supabase.from("ai_agents")
-      .select("id, name, department, status, owner_only")
+      .select("id, slug, name, department, status, owner_only")
       .order("department"),
     supabase.from("daily_briefs")
       .select("title, summary, priorities, created_at")
@@ -51,6 +51,13 @@ export default async function CommandCenterPage() {
   const financePending = numberValue(snapshot, "finance_pending");
   const revenue = numberValue(snapshot, "revenue");
 
+  const agentMap = new Map(
+    (agentsRes.data ?? []).map((agent) => [
+      agent.slug,
+      { name: agent.name, status: agent.status as AgentVisualStatus },
+    ]),
+  );
+
   const metrics = [
     { label: "Omzet bulan ini", value: rupiah(revenue), note: "Transaksi terverifikasi" },
     { label: "Order aktif", value: String(orders), note: "Produk jadi" },
@@ -60,11 +67,11 @@ export default async function CommandCenterPage() {
   ];
 
   const rooms: OfficeRoom[] = [
-    { id: "sales", name: "Sales Room", href: "/sales", value: leads, label: "lead aktif" },
-    { id: "project", name: "Project Room", href: "/projects", value: projects, label: "proyek aktif" },
-    { id: "creative", name: "Creative Room", href: "/creative", value: 0, label: "siap menerima brief" },
-    { id: "finance", name: "Finance Room", href: "/finance", value: financePending, label: "transaksi pending" },
-    { id: "review", name: "Review Room", href: "/review", value: review, label: "antrean review" },
+    { id: "sales", name: "Sales Room", href: "/sales", value: leads, label: "lead aktif", agentName: agentMap.get("sales")?.name, agentStatus: agentMap.get("sales")?.status },
+    { id: "project", name: "Project Room", href: "/projects", value: projects, label: "proyek aktif", agentName: agentMap.get("project-manager")?.name, agentStatus: agentMap.get("project-manager")?.status },
+    { id: "creative", name: "Creative Room", href: "/creative", value: 0, label: "workspace creative", agentName: agentMap.get("creative")?.name, agentStatus: agentMap.get("creative")?.status },
+    { id: "finance", name: "Finance Room", href: "/finance", value: financePending, label: "transaksi pending", agentName: agentMap.get("finance")?.name, agentStatus: agentMap.get("finance")?.status },
+    { id: "review", name: "Review Room", href: "/review", value: review, label: "antrean review", agentName: agentMap.get("reviewer")?.name, agentStatus: agentMap.get("reviewer")?.status },
     {
       id: "owner",
       name: "Owner Room",
@@ -72,6 +79,8 @@ export default async function CommandCenterPage() {
       value: approvals,
       label: profile.role === "owner" ? "approval menunggu" : "approval",
       alert: approvals > 0,
+      agentName: agentMap.get("developer")?.name,
+      agentStatus: agentMap.get("developer")?.status,
     },
   ];
 
