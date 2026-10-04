@@ -29,6 +29,7 @@ export default async function CommandCenterPage() {
     agentsRes,
     reviewRes,
     financePendingRes,
+    briefRes,
   ] = await Promise.all([
     supabase.from("orders").select("*", { count: "exact", head: true }).neq("status", "dibatalkan"),
     supabase.from("leads").select("*", { count: "exact", head: true }).in("status", ["lead_baru", "konsultasi", "penawaran", "menunggu_dp"]),
@@ -38,6 +39,11 @@ export default async function CommandCenterPage() {
     supabase.from("ai_agents").select("id, name, department, status, owner_only").order("department"),
     supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["revisi", "handover"]),
     supabase.from("transactions").select("*", { count: "exact", head: true }).eq("status", "pending"),
+    supabase.from("daily_briefs")
+      .select("title, summary, priorities, created_at")
+      .eq("profile_id", profile.id)
+      .order("brief_date", { ascending: false })
+      .limit(1),
   ]);
 
   const revenue = (revenueRes.data ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
@@ -94,17 +100,23 @@ export default async function CommandCenterPage() {
             <span className="status-dot">Aktif</span>
           </div>
           <p className="brief-copy">
-            Saat ini ada <strong>{ordersRes.count ?? 0} order</strong>,{" "}
-            <strong>{leadsRes.count ?? 0} lead custom</strong>,{" "}
-            <strong>{projectsRes.count ?? 0} proyek aktif</strong>, dan{" "}
-            <strong>{approvalsRes.count ?? 0} approval</strong> yang perlu dipantau.
+            {briefRes.data?.[0]?.summary ?? (
+              <>
+                Saat ini ada <strong>{ordersRes.count ?? 0} order</strong>,{" "}
+                <strong>{leadsRes.count ?? 0} lead custom</strong>,{" "}
+                <strong>{projectsRes.count ?? 0} proyek aktif</strong>, dan{" "}
+                <strong>{approvalsRes.count ?? 0} approval</strong> yang perlu dipantau.
+              </>
+            )}
           </p>
           <div className="brief-priority">
             <span>Prioritas sistem</span>
             <strong>
-              {(approvalsRes.count ?? 0) > 0
-                ? "Tinjau Approval Center terlebih dahulu."
-                : "Belum ada approval tertunda. Fokus pada lead dan proyek aktif."}
+              {Array.isArray(briefRes.data?.[0]?.priorities) && briefRes.data?.[0]?.priorities.length
+                ? String(briefRes.data[0].priorities[0])
+                : (approvalsRes.count ?? 0) > 0
+                  ? "Tinjau Approval Center terlebih dahulu."
+                  : "Belum ada approval tertunda. Fokus pada lead dan proyek aktif."}
             </strong>
           </div>
         </article>

@@ -7,7 +7,7 @@ Kantor AI internal untuk operasional Teman Digital.
 - PHASE B — Core Operations: ✅
 - PHASE C — AI Orchestration: ✅ fondasi aktif
 - PHASE D — 3D Office: ✅ adaptive lobby
-- PHASE E — Automation: berikutnya
+- PHASE E — Automation & Workflow Engine: ✅ fondasi aktif
 - Vercel: **belum di-import**. Akan dibuat sebagai project baru setelah aplikasi siap untuk deployment.
 
 ## Stack
@@ -26,6 +26,8 @@ Salin `.env.example` menjadi `.env.local`, lalu isi:
 - `GEMINI_API_KEY` — server-only
 - `GEMINI_MODEL=gemini-3.8-flash`
 - `AI_PROVIDER=gemini`
+- `SUPABASE_SERVICE_ROLE_KEY` — server-only, khusus scheduler
+- `AUTOMATION_SECRET` — server-only, autentikasi endpoint scheduler
 
 Jangan commit `.env.local` atau credential apa pun.
 
@@ -64,6 +66,8 @@ Migration live saat ini:
 - `20261004065419_foundation_core_schema`
 - `20261004065551_optimize_notification_rls`
 - `20261004072134_cover_foreign_key_indexes`
+- `20261004072516_automation_workflow_engine`
+- `20261004072557_automation_notification_dedupe`
 
 Rollback destruktif harus selalu melalui review/approval owner.
 
@@ -71,3 +75,19 @@ Rollback destruktif harus selalu melalui review/approval owner.
 Tagline: **Bangun Lebih Baik. Tumbuh Lebih Cepat.**
 
 Logo resmi tidak dibuat ulang di source. Asset logo master akan dipasang saat file final tersedia pada workspace coding.
+
+
+## Automation Engine
+Rule bawaan:
+- Daily Brief
+- Lead Follow-up
+- Project Deadline Watch
+- Finance Pending Watch
+- Approval Watch
+- Review Queue Watch
+
+Endpoint scheduler internal:
+- `GET /api/automation/scheduled?cadence=hourly`
+- `GET /api/automation/scheduled?cadence=daily`
+
+Endpoint harus menerima `Authorization: Bearer <AUTOMATION_SECRET>` dan menggunakan Supabase service-role hanya di server. Scheduling eksternal belum diaktifkan karena Vercel project sengaja belum dibuat.

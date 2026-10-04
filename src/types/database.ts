@@ -347,6 +347,89 @@ export type Database = {
           },
         ]
       }
+      automation_rules: {
+        Row: {
+          config: Json
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          requires_approval: boolean
+          schedule_cron: string | null
+          slug: string
+          status: Database["public"]["Enums"]["automation_status"]
+          trigger_type: Database["public"]["Enums"]["automation_trigger"]
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          requires_approval?: boolean
+          schedule_cron?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["automation_status"]
+          trigger_type?: Database["public"]["Enums"]["automation_trigger"]
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          requires_approval?: boolean
+          schedule_cron?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["automation_status"]
+          trigger_type?: Database["public"]["Enums"]["automation_trigger"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      automation_runs: {
+        Row: {
+          completed_at: string | null
+          error_message: string | null
+          id: string
+          result: Json | null
+          rule_id: string
+          started_at: string
+          status: Database["public"]["Enums"]["automation_run_status"]
+          trigger_source: string
+        }
+        Insert: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          result?: Json | null
+          rule_id: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["automation_run_status"]
+          trigger_source?: string
+        }
+        Update: {
+          completed_at?: string | null
+          error_message?: string | null
+          id?: string
+          result?: Json | null
+          rule_id?: string
+          started_at?: string
+          status?: Database["public"]["Enums"]["automation_run_status"]
+          trigger_source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_runs_rule_id_fkey"
+            columns: ["rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           company: string | null
@@ -385,6 +468,47 @@ export type Database = {
           {
             foreignKeyName: "clients_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_briefs: {
+        Row: {
+          brief_date: string
+          created_at: string
+          id: string
+          metrics: Json
+          priorities: Json
+          profile_id: string
+          summary: string
+          title: string
+        }
+        Insert: {
+          brief_date?: string
+          created_at?: string
+          id?: string
+          metrics?: Json
+          priorities?: Json
+          profile_id: string
+          summary: string
+          title: string
+        }
+        Update: {
+          brief_date?: string
+          created_at?: string
+          id?: string
+          metrics?: Json
+          priorities?: Json
+          profile_id?: string
+          summary?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_briefs_profile_id_fkey"
+            columns: ["profile_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -659,36 +783,49 @@ export type Database = {
       }
       notifications: {
         Row: {
+          automation_rule_id: string | null
           body: string | null
           created_at: string
           id: string
           level: Database["public"]["Enums"]["notification_level"]
           link: string | null
+          notification_key: string | null
           profile_id: string
           read_at: string | null
           title: string
         }
         Insert: {
+          automation_rule_id?: string | null
           body?: string | null
           created_at?: string
           id?: string
           level?: Database["public"]["Enums"]["notification_level"]
           link?: string | null
+          notification_key?: string | null
           profile_id: string
           read_at?: string | null
           title: string
         }
         Update: {
+          automation_rule_id?: string | null
           body?: string | null
           created_at?: string
           id?: string
           level?: Database["public"]["Enums"]["notification_level"]
           link?: string | null
+          notification_key?: string | null
           profile_id?: string
           read_at?: string | null
           title?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "notifications_automation_rule_id_fkey"
+            columns: ["automation_rule_id"]
+            isOneToOne: false
+            referencedRelation: "automation_rules"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "notifications_profile_id_fkey"
             columns: ["profile_id"]
@@ -1191,6 +1328,9 @@ export type Database = {
       app_role: "owner" | "staff"
       approval_risk: "low" | "medium" | "high" | "critical"
       approval_status: "menunggu" | "disetujui" | "ditolak" | "minta_revisi"
+      automation_run_status: "berjalan" | "selesai" | "gagal" | "dilewati"
+      automation_status: "active" | "paused"
+      automation_trigger: "manual" | "daily" | "hourly" | "event"
       invoice_status:
         | "draft"
         | "terkirim"
@@ -1398,6 +1538,9 @@ export const Constants = {
       app_role: ["owner", "staff"],
       approval_risk: ["low", "medium", "high", "critical"],
       approval_status: ["menunggu", "disetujui", "ditolak", "minta_revisi"],
+      automation_run_status: ["berjalan", "selesai", "gagal", "dilewati"],
+      automation_status: ["active", "paused"],
+      automation_trigger: ["manual", "daily", "hourly", "event"],
       invoice_status: [
         "draft",
         "terkirim",

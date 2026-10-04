@@ -4,6 +4,7 @@ type Props = {
   children: React.ReactNode;
   userName: string;
   role: "owner" | "staff";
+  unreadCount: number;
 };
 
 const nav = [
@@ -16,11 +17,12 @@ const nav = [
   { href: "/finance", label: "Finance Room", short: "Finance" },
   { href: "/review", label: "Review Room", short: "Review" },
   { href: "/approval", label: "Approval Center", short: "Approval" },
+  { href: "/automation", label: "Automation", short: "Auto" },
   { href: "/knowledge", label: "Knowledge Base", short: "Knowledge" },
   { href: "/activity", label: "Activity Log", short: "Aktivitas" },
 ];
 
-export function AppShell({ children, userName, role }: Props) {
+export function AppShell({ children, userName, role, unreadCount }: Props) {
   return (
     <div className="app-frame">
       <aside className="sidebar">
@@ -40,7 +42,16 @@ export function AppShell({ children, userName, role }: Props) {
         </div>
       </aside>
       <div className="app-main">
-        <header className="topbar"><div><span className="topbar-kicker">KANTOR AI</span><strong>Operasional Teman Digital</strong></div><div className="live-pill"><span /> Sistem aktif</div></header>
+        <header className="topbar">
+          <div><span className="topbar-kicker">KANTOR AI</span><strong>Operasional Teman Digital</strong></div>
+          <div className="topbar-actions">
+            <Link href="/notifications" className="notification-link">
+              Notifikasi
+              {unreadCount > 0 ? <span>{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
+            </Link>
+            <div className="live-pill"><span /> Sistem aktif</div>
+          </div>
+        </header>
         <main className="page-content">{children}</main>
       </div>
       <nav className="mobile-nav">{nav.slice(0, 5).map((item)=><Link key={item.href} href={item.href}>{item.short}</Link>)}</nav>
