@@ -8,6 +8,7 @@ type Props = {
 
 const nav = [
   { href: "/kantor", label: "Command Center", short: "Beranda" },
+  { href: "/ai", label: "Pegawai AI", short: "AI" },
   { href: "/sales", label: "Sales Room", short: "Sales" },
   { href: "/orders", label: "Produk & Order", short: "Order" },
   { href: "/projects", label: "Project Room", short: "Proyek" },
