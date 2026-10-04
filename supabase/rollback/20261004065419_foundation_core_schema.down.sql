@@ -1,0 +1,37 @@
+-- MANUAL ROLLBACK ONLY.
+-- DESTRUCTIVE: requires explicit owner approval before execution.
+drop table if exists public.notifications cascade;
+drop table if exists public.activity_logs cascade;
+drop table if exists public.knowledge_documents cascade;
+drop table if exists public.ai_handoffs cascade;
+drop table if exists public.ai_tasks cascade;
+drop table if exists public.invoices cascade;
+drop table if exists public.transactions cascade;
+drop table if exists public.revisions cascade;
+drop table if exists public.approvals cascade;
+drop table if exists public.project_tasks cascade;
+drop table if exists public.projects cascade;
+drop table if exists public.licenses cascade;
+drop table if exists public.orders cascade;
+drop table if exists public.leads cascade;
+drop table if exists public.ai_agents cascade;
+drop table if exists public.products cascade;
+drop table if exists public.clients cascade;
+drop table if exists public.profiles cascade;
+drop schema if exists private cascade;
+drop type if exists public.notification_level;
+drop type if exists public.revision_status;
+drop type if exists public.invoice_status;
+drop type if exists public.transaction_status;
+drop type if exists public.transaction_type;
+drop type if exists public.ai_task_status;
+drop type if exists public.agent_status;
+drop type if exists public.approval_status;
+drop type if exists public.approval_risk;
+drop type if exists public.payment_status;
+drop type if exists public.service_type;
+drop type if exists public.project_status;
+drop type if exists public.order_status;
+drop type if exists public.lead_status;
+drop type if exists public.lead_source;
+drop type if exists public.app_role;

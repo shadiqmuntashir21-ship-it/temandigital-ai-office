@@ -1,0 +1,18 @@
+-- Database foundation reference for Teman Digital AI Office.
+-- The live schema currently contains these entities:
+-- profiles, clients, leads, products, orders, licenses, projects, project_tasks,
+-- revisions, transactions, invoices, ai_agents, ai_tasks, ai_handoffs, approvals,
+-- knowledge_documents, activity_logs, notifications.
+--
+-- RLS is enabled on every public table.
+-- anon has no table access.
+-- authenticated receives explicit Data API grants and is constrained by RLS.
+-- AI Developer rows/tasks are owner-only through backend policies.
+--
+-- Applied migration versions:
+-- 20261004065419 foundation_core_schema
+-- 20261004065541 optimize_notification_rls
+--
+-- Use Supabase migration history as the source of truth for the already-applied
+-- live DDL. Before provisioning another environment, export/pull the live schema
+-- and review it rather than copying credentials or hand-editing production.
