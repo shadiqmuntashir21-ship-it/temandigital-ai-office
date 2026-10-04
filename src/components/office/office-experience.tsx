@@ -28,13 +28,13 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
   const [mode, setMode] = useState<Mode>("auto");
   const [autoLite, setAutoLite] = useState(true);
   const [ready, setReady] = useState(false);
-  const [idle3DReady, setIdle3DReady] = useState(false);
+  const [threeReady, setThreeReady] = useState(false);
 
   useEffect(() => {
     setAutoLite(shouldUseLite());
     setReady(true);
 
-    const timer = window.setTimeout(() => setIdle3DReady(true), 700);
+    const timer = window.setTimeout(() => setThreeReady(true), 180);
     const handleResize = () => setAutoLite(shouldUseLite());
 
     window.addEventListener("resize", handleResize);
@@ -45,7 +45,7 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
   }, []);
 
   const lite = mode === "lite" || (mode === "auto" && autoLite);
-  const render3D = !lite && (mode === "3d" || idle3DReady);
+  const render3D = !lite && (mode === "3d" || threeReady);
 
   return (
     <section className="office-experience">
@@ -53,7 +53,7 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
         <div>
           <span className="soft-label">LOBBY · LIVE OFFICE</span>
           <h2>Kantor digital Teman Digital</h2>
-          <p>3D dimuat setelah antarmuka siap agar navigasi tetap ringan dan responsif.</p>
+          <p>Pegawai AI bergerak dan workstation menyala mengikuti status pekerjaan masing-masing.</p>
         </div>
         <div className="mode-switch" aria-label="Mode tampilan kantor">
           <button className={mode === "auto" ? "active" : ""} onClick={() => setMode("auto")}>Otomatis</button>
@@ -78,7 +78,9 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
           >
             <span>{room.name}</span>
             <strong>{room.value}</strong>
-            <small>{room.label}</small>
+            <small>
+              {room.agentName ? `${room.agentName} · ${room.agentStatus?.replaceAll("_", " ") || "tersedia"}` : room.label}
+            </small>
           </Link>
         ))}
       </div>
