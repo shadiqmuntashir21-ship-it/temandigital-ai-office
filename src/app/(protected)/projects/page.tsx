@@ -17,7 +17,7 @@ export default async function ProjectsPage() {
         <article className="data-panel">
           <div className="project-list">
             {(projects ?? []).map((project) => (
-              <Link href={`/projects/${project.id}`} className="project-card" key={project.id}>
+              <Link prefetch={false} href={`/projects/${project.id}`} className="project-card" key={project.id}>
                 <div><span className="badge">{labelStatus(project.status)}</span><h2>{project.title}</h2><p>{project.clients?.name}{project.clients?.company ? ` · ${project.clients.company}` : ""}</p></div>
                 <div className="progress-wrap"><div className="progress-track"><span style={{width:`${project.progress}%`}} /></div><strong>{project.progress}%</strong></div>
                 <div className="project-foot"><span>Deadline {tanggal(project.deadline)}</span><span>Revisi {project.revision_used}/{project.revision_limit}</span><strong>{project.agreed_value ? rupiah(project.agreed_value) : "Nilai belum ada"}</strong></div>

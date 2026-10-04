@@ -13,7 +13,12 @@ export function OfficeLite({ rooms }: OfficeSceneProps) {
       </div>
       <div className="lite-room-grid">
         {rooms.map((room) => (
-          <Link key={room.id} href={room.href} className={`lite-room ${room.alert ? "has-alert" : ""}`}>
+          <Link
+            key={room.id}
+            href={room.href}
+            prefetch={false}
+            className={`lite-room ${room.alert ? "has-alert" : ""}`}
+          >
             <div>
               <span>{room.name}</span>
               <strong>{room.value}</strong>

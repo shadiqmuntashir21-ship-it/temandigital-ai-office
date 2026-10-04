@@ -1307,6 +1307,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      command_center_snapshot: {
+        Args: { p_month_start: string }
+        Returns: Json
+      }
       owner_pin_status: { Args: never; Returns: Json }
       record_owner_pin_attempt: { Args: { p_success: boolean }; Returns: Json }
     }

@@ -1,9 +1,10 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createOwnerClient } from "@/lib/supabase/owner";
 import { hasValidOwnerSession } from "@/lib/auth/owner-session";
 
-export async function getProfileContext() {
+async function getProfileContextUncached() {
   if (await hasValidOwnerSession()) {
     const supabase = createOwnerClient();
     const { data: profile, error } = await supabase
@@ -46,12 +47,12 @@ export async function getProfileContext() {
   return { supabase, profile, claims: data.claims };
 }
 
+export const getProfileContext = cache(getProfileContextUncached);
+
 export async function requireProfile() {
   const context = await getProfileContext();
 
-  if (!context) {
-    redirect("/login");
-  }
+  if (!context) redirect("/login");
 
   return context;
 }

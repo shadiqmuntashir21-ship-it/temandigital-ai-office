@@ -1,18 +1,14 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { OfficeLite } from "./office-lite";
 import type { OfficeSceneProps } from "./types";
 
 const OfficeScene = dynamic(() => import("./office-scene"), {
   ssr: false,
-  loading: () => (
-    <div className="office-loading">
-      <div className="office-loading-mark">TD</div>
-      <span>Menyiapkan kantor 3D…</span>
-    </div>
-  ),
+  loading: () => <OfficeLite rooms={[]} />,
 });
 
 type Mode = "auto" | "3d" | "lite";
@@ -32,17 +28,24 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
   const [mode, setMode] = useState<Mode>("auto");
   const [autoLite, setAutoLite] = useState(true);
   const [ready, setReady] = useState(false);
+  const [idle3DReady, setIdle3DReady] = useState(false);
 
   useEffect(() => {
     setAutoLite(shouldUseLite());
     setReady(true);
 
+    const timer = window.setTimeout(() => setIdle3DReady(true), 700);
     const handleResize = () => setAutoLite(shouldUseLite());
+
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("resize", handleResize);
+    };
   }, []);
 
   const lite = mode === "lite" || (mode === "auto" && autoLite);
+  const render3D = !lite && (mode === "3d" || idle3DReady);
 
   return (
     <section className="office-experience">
@@ -50,7 +53,7 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
         <div>
           <span className="soft-label">LOBBY · LIVE OFFICE</span>
           <h2>Kantor digital Teman Digital</h2>
-          <p>3D adalah pengalaman dan navigasi. Pekerjaan tetap dilakukan di dashboard 2D yang cepat.</p>
+          <p>3D dimuat setelah antarmuka siap agar navigasi tetap ringan dan responsif.</p>
         </div>
         <div className="mode-switch" aria-label="Mode tampilan kantor">
           <button className={mode === "auto" ? "active" : ""} onClick={() => setMode("auto")}>Otomatis</button>
@@ -59,9 +62,7 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
         </div>
       </div>
 
-      {!ready ? (
-        <div className="office-loading"><div className="office-loading-mark">TD</div><span>Menyiapkan lobby…</span></div>
-      ) : lite ? (
+      {!ready || !render3D ? (
         <OfficeLite rooms={rooms} />
       ) : (
         <OfficeScene rooms={rooms} />
@@ -69,11 +70,16 @@ export function OfficeExperience({ rooms }: OfficeSceneProps) {
 
       <div className="office-room-cards">
         {rooms.map((room) => (
-          <a key={room.id} href={room.href} className={room.alert ? "room-summary alert" : "room-summary"}>
+          <Link
+            key={room.id}
+            href={room.href}
+            prefetch={false}
+            className={room.alert ? "room-summary alert" : "room-summary"}
+          >
             <span>{room.name}</span>
             <strong>{room.value}</strong>
             <small>{room.label}</small>
-          </a>
+          </Link>
         ))}
       </div>
     </section>

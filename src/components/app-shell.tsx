@@ -1,10 +1,13 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useCallback, useEffect, useState } from "react";
 
 type Props = {
   children: React.ReactNode;
   userName: string;
   role: "owner" | "staff";
-  unreadCount: number;
 };
 
 const nav = [
@@ -22,9 +25,71 @@ const nav = [
   { href: "/activity", label: "Activity Log", short: "Aktivitas" },
 ];
 
-export function AppShell({ children, userName, role, unreadCount }: Props) {
+function matchesPath(pathname: string, href: string) {
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function AppShell({ children, userName, role }: Props) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const prefetch = useCallback((href: string) => {
+    router.prefetch(href);
+  }, [router]);
+
+  const loadUnread = useCallback(async () => {
+    try {
+      const response = await fetch("/api/notifications/unread", {
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      if (!response.ok) return;
+      const data = await response.json() as { unread?: number };
+      setUnreadCount(Number(data.unread ?? 0));
+    } catch {
+      // Badge tidak boleh menghambat navigasi utama.
+    }
+  }, []);
+
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
+
+  useEffect(() => {
+    void loadUnread();
+    const timer = window.setInterval(() => void loadUnread(), 60_000);
+    return () => window.clearInterval(timer);
+  }, [loadUnread]);
+
+  function navLink(item: { href: string; label: string; short: string }, mobile = false) {
+    const active = matchesPath(pathname, item.href);
+    const pending = pendingHref === item.href;
+
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        prefetch={false}
+        onPointerEnter={() => prefetch(item.href)}
+        onFocus={() => prefetch(item.href)}
+        onClick={() => {
+          if (!active) setPendingHref(item.href);
+        }}
+        className={[active ? "active" : "", pending ? "pending" : ""].filter(Boolean).join(" ")}
+        aria-current={active ? "page" : undefined}
+      >
+        {mobile ? item.short : item.label}
+      </Link>
+    );
+  }
+
+  const ownerActive = matchesPath(pathname, "/owner");
+
   return (
-    <div className="app-frame">
+    <div className={pendingHref ? "app-frame is-routing" : "app-frame"}>
+      <div className={pendingHref ? "nav-progress active" : "nav-progress"} aria-hidden="true" />
       <aside className="sidebar">
         <div className="sidebar-brand">
           <span className="brand-kicker">TEMAN DIGITAL</span>
@@ -32,20 +97,45 @@ export function AppShell({ children, userName, role, unreadCount }: Props) {
           <small>Internal workspace</small>
         </div>
         <nav className="side-nav">
-          {nav.map((item) => <Link key={item.href} href={item.href}>{item.label}</Link>)}
-          {role === "owner" ? <Link className="owner-link" href="/owner">Owner Room</Link> : null}
+          {nav.map((item) => navLink(item))}
+          {role === "owner" ? (
+            <Link
+              className={`owner-link ${ownerActive ? "active" : ""} ${pendingHref === "/owner" ? "pending" : ""}`}
+              href="/owner"
+              prefetch={false}
+              onPointerEnter={() => prefetch("/owner")}
+              onFocus={() => prefetch("/owner")}
+              onClick={() => {
+                if (!ownerActive) setPendingHref("/owner");
+              }}
+            >
+              Owner Room
+            </Link>
+          ) : null}
         </nav>
         <div className="sidebar-user">
           <div className="user-avatar">{userName.slice(0, 1).toUpperCase()}</div>
           <div><strong>{userName}</strong><span>{role === "owner" ? "Owner" : "Staf"}</span></div>
-          <form action="/auth/signout" method="post"><button type="submit" className="ghost-button">Keluar</button></form>
+          <form action="/auth/signout" method="post">
+            <button type="submit" className="ghost-button">Keluar</button>
+          </form>
         </div>
       </aside>
+
       <div className="app-main">
         <header className="topbar">
           <div><span className="topbar-kicker">KANTOR AI</span><strong>Operasional Teman Digital</strong></div>
           <div className="topbar-actions">
-            <Link href="/notifications" className="notification-link">
+            <Link
+              href="/notifications"
+              prefetch={false}
+              onPointerEnter={() => prefetch("/notifications")}
+              onFocus={() => prefetch("/notifications")}
+              onClick={() => {
+                if (!matchesPath(pathname, "/notifications")) setPendingHref("/notifications");
+              }}
+              className={`notification-link ${matchesPath(pathname, "/notifications") ? "active" : ""}`}
+            >
               Notifikasi
               {unreadCount > 0 ? <span>{unreadCount > 99 ? "99+" : unreadCount}</span> : null}
             </Link>
@@ -54,7 +144,10 @@ export function AppShell({ children, userName, role, unreadCount }: Props) {
         </header>
         <main className="page-content">{children}</main>
       </div>
-      <nav className="mobile-nav">{nav.slice(0, 5).map((item)=><Link key={item.href} href={item.href}>{item.short}</Link>)}</nav>
+
+      <nav className="mobile-nav">
+        {nav.slice(0, 5).map((item) => navLink(item, true))}
+      </nav>
     </div>
   );
 }

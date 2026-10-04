@@ -44,22 +44,6 @@ export async function ownerPinLogin(formData: FormData) {
     redirect("/login?error=Konfigurasi%20owner%20belum%20lengkap");
   }
 
-  const { data: statusData, error: statusError } = await ownerDb.rpc("owner_pin_status");
-  if (statusError) {
-    console.error("Owner PIN status error:", statusError.message);
-    redirect("/login?error=Sistem%20PIN%20sedang%20tidak%20tersedia");
-  }
-
-  const status = asObject(statusData);
-  if (status.ok !== true) {
-    redirect("/login?error=Sistem%20PIN%20sedang%20tidak%20tersedia");
-  }
-
-  if (status.locked === true) {
-    const retry = Number(status.retry_after_seconds ?? 900);
-    redirect(`/login?error=${encodeURIComponent(`Terlalu banyak percobaan. Coba lagi dalam ${formatRetry(retry)}.`)}`);
-  }
-
   const valid = sameSecret(pin, expectedPin);
 
   const { data: attemptData, error: attemptError } = await ownerDb.rpc(
@@ -74,36 +58,20 @@ export async function ownerPinLogin(formData: FormData) {
 
   const attempt = asObject(attemptData);
 
-  if (!valid) {
-    if (attempt.locked === true) {
-      redirect("/login?error=PIN%20salah.%20Akses%20dikunci%2015%20menit");
-    }
+  if (attempt.locked === true) {
+    const retry = Number(attempt.retry_after_seconds ?? 900);
+    const message = valid
+      ? `Akses masih dikunci. Coba lagi dalam ${formatRetry(retry)}.`
+      : "PIN salah. Akses dikunci 15 menit.";
+    redirect(`/login?error=${encodeURIComponent(message)}`);
+  }
 
+  if (!valid) {
     const remaining = Number(attempt.attempts_remaining ?? 0);
     redirect(`/login?error=${encodeURIComponent(`PIN salah. Sisa percobaan: ${remaining}.`)}`);
   }
 
   await issueOwnerSession();
-
-  const { data: profile } = await ownerDb
-    .from("profiles")
-    .select("id")
-    .eq("role", "owner")
-    .eq("is_active", true)
-    .single();
-
-  if (profile) {
-    await ownerDb.from("activity_logs").insert({
-      actor_type: "human",
-      actor_profile_id: profile.id,
-      action: "auth.owner_pin_login",
-      entity_type: "profile",
-      entity_id: profile.id,
-      summary: "Owner masuk menggunakan PIN.",
-      metadata: { method: "owner_pin" },
-    });
-  }
-
   redirect("/kantor");
 }
 

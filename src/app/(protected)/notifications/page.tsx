@@ -39,7 +39,7 @@ export default async function NotificationsPage() {
                 <small>{tanggal(item.created_at)}</small>
               </div>
               <p>{item.body || "Tidak ada detail tambahan."}</p>
-              {item.link ? <Link href={item.link}>Buka terkait →</Link> : null}
+              {item.link ? <Link prefetch={false} href={item.link}>Buka terkait →</Link> : null}
             </div>
             {!item.read_at ? (
               <form action={markNotificationRead}>

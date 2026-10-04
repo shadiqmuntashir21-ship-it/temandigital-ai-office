@@ -14,31 +14,22 @@ function statusLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 
+function numberValue(source: Record<string, unknown>, key: string) {
+  const value = source[key];
+  return typeof value === "number" ? value : Number(value ?? 0);
+}
+
 export default async function CommandCenterPage() {
   const { supabase, profile } = await requireProfile();
 
   const now = new Date();
   const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
 
-  const [
-    ordersRes,
-    leadsRes,
-    projectsRes,
-    approvalsRes,
-    revenueRes,
-    agentsRes,
-    reviewRes,
-    financePendingRes,
-    briefRes,
-  ] = await Promise.all([
-    supabase.from("orders").select("*", { count: "exact", head: true }).neq("status", "dibatalkan"),
-    supabase.from("leads").select("*", { count: "exact", head: true }).in("status", ["lead_baru", "konsultasi", "penawaran", "menunggu_dp"]),
-    supabase.from("projects").select("*", { count: "exact", head: true }).not("status", "in", '("selesai","dibatalkan")'),
-    supabase.from("approvals").select("*", { count: "exact", head: true }).eq("status", "menunggu"),
-    supabase.from("transactions").select("amount").eq("status", "terverifikasi").gte("occurred_at", monthStart).in("type", ["pemasukan", "dp", "pelunasan"]),
-    supabase.from("ai_agents").select("id, name, department, status, owner_only").order("department"),
-    supabase.from("projects").select("*", { count: "exact", head: true }).in("status", ["revisi", "handover"]),
-    supabase.from("transactions").select("*", { count: "exact", head: true }).eq("status", "pending"),
+  const [snapshotRes, agentsRes, briefRes] = await Promise.all([
+    supabase.rpc("command_center_snapshot", { p_month_start: monthStart }),
+    supabase.from("ai_agents")
+      .select("id, name, department, status, owner_only")
+      .order("department"),
     supabase.from("daily_briefs")
       .select("title, summary, priorities, created_at")
       .eq("profile_id", profile.id)
@@ -46,22 +37,42 @@ export default async function CommandCenterPage() {
       .limit(1),
   ]);
 
-  const revenue = (revenueRes.data ?? []).reduce((sum, row) => sum + Number(row.amount), 0);
+  const rawSnapshot = snapshotRes.data;
+  const snapshot =
+    rawSnapshot && typeof rawSnapshot === "object" && !Array.isArray(rawSnapshot)
+      ? rawSnapshot as Record<string, unknown>
+      : {};
+
+  const orders = numberValue(snapshot, "orders");
+  const leads = numberValue(snapshot, "leads");
+  const projects = numberValue(snapshot, "projects");
+  const approvals = numberValue(snapshot, "approvals");
+  const review = numberValue(snapshot, "review");
+  const financePending = numberValue(snapshot, "finance_pending");
+  const revenue = numberValue(snapshot, "revenue");
+
   const metrics = [
     { label: "Omzet bulan ini", value: rupiah(revenue), note: "Transaksi terverifikasi" },
-    { label: "Order aktif", value: String(ordersRes.count ?? 0), note: "Produk jadi" },
-    { label: "Lead custom", value: String(leadsRes.count ?? 0), note: "Pipeline berjalan" },
-    { label: "Proyek aktif", value: String(projectsRes.count ?? 0), note: "Belum selesai" },
-    { label: "Approval", value: String(approvalsRes.count ?? 0), note: "Menunggu keputusan" },
+    { label: "Order aktif", value: String(orders), note: "Produk jadi" },
+    { label: "Lead custom", value: String(leads), note: "Pipeline berjalan" },
+    { label: "Proyek aktif", value: String(projects), note: "Belum selesai" },
+    { label: "Approval", value: String(approvals), note: "Menunggu keputusan" },
   ];
 
   const rooms: OfficeRoom[] = [
-    { id: "sales", name: "Sales Room", href: "/sales", value: leadsRes.count ?? 0, label: "lead aktif" },
-    { id: "project", name: "Project Room", href: "/projects", value: projectsRes.count ?? 0, label: "proyek aktif" },
+    { id: "sales", name: "Sales Room", href: "/sales", value: leads, label: "lead aktif" },
+    { id: "project", name: "Project Room", href: "/projects", value: projects, label: "proyek aktif" },
     { id: "creative", name: "Creative Room", href: "/creative", value: 0, label: "siap menerima brief" },
-    { id: "finance", name: "Finance Room", href: "/finance", value: financePendingRes.count ?? 0, label: "transaksi pending" },
-    { id: "review", name: "Review Room", href: "/review", value: reviewRes.count ?? 0, label: "antrean review" },
-    { id: "owner", name: "Owner Room", href: profile.role === "owner" ? "/owner" : "/approval", value: approvalsRes.count ?? 0, label: profile.role === "owner" ? "approval menunggu" : "approval", alert: (approvalsRes.count ?? 0) > 0 },
+    { id: "finance", name: "Finance Room", href: "/finance", value: financePending, label: "transaksi pending" },
+    { id: "review", name: "Review Room", href: "/review", value: review, label: "antrean review" },
+    {
+      id: "owner",
+      name: "Owner Room",
+      href: profile.role === "owner" ? "/owner" : "/approval",
+      value: approvals,
+      label: profile.role === "owner" ? "approval menunggu" : "approval",
+      alert: approvals > 0,
+    },
   ];
 
   return (
@@ -75,7 +86,7 @@ export default async function CommandCenterPage() {
             dalam satu alur yang bisa diaudit.
           </p>
         </div>
-        <div className="hero-chip">LIVE OFFICE · FOUNDATION ACTIVE</div>
+        <div className="hero-chip">LIVE OFFICE · SYSTEM ACTIVE</div>
       </section>
 
       <OfficeExperience rooms={rooms} />
@@ -102,10 +113,10 @@ export default async function CommandCenterPage() {
           <p className="brief-copy">
             {briefRes.data?.[0]?.summary ?? (
               <>
-                Saat ini ada <strong>{ordersRes.count ?? 0} order</strong>,{" "}
-                <strong>{leadsRes.count ?? 0} lead custom</strong>,{" "}
-                <strong>{projectsRes.count ?? 0} proyek aktif</strong>, dan{" "}
-                <strong>{approvalsRes.count ?? 0} approval</strong> yang perlu dipantau.
+                Saat ini ada <strong>{orders} order</strong>,{" "}
+                <strong>{leads} lead custom</strong>,{" "}
+                <strong>{projects} proyek aktif</strong>, dan{" "}
+                <strong>{approvals} approval</strong> yang perlu dipantau.
               </>
             )}
           </p>
@@ -114,7 +125,7 @@ export default async function CommandCenterPage() {
             <strong>
               {Array.isArray(briefRes.data?.[0]?.priorities) && briefRes.data?.[0]?.priorities.length
                 ? String(briefRes.data[0].priorities[0])
-                : (approvalsRes.count ?? 0) > 0
+                : approvals > 0
                   ? "Tinjau Approval Center terlebih dahulu."
                   : "Belum ada approval tertunda. Fokus pada lead dan proyek aktif."}
             </strong>
