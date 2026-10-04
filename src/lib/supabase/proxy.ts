@@ -39,7 +39,8 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     path.startsWith("/login") ||
     path.startsWith("/auth") ||
-    path === "/api/health";
+    path === "/api/health" ||
+    path === "/api/ai/smoke";
 
   if (!claims && !ownerCookiePresent && !isPublic) {
     const url = request.nextUrl.clone();
