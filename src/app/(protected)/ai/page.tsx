@@ -17,7 +17,7 @@ export default async function AIPage() {
 
   const { data: rows } = await supabase
     .from("ai_tasks")
-    .select("id, title, instruction, status, created_at, completed_at, error_message, output, ai_agents(slug, name, department)")
+    .select("id, title, instruction, status, created_at, completed_at, error_message, input, output, ai_agents(slug, name, department)")
     .order("created_at", { ascending: false })
     .limit(30);
 
