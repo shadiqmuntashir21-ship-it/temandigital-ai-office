@@ -9,8 +9,8 @@ Kantor AI internal untuk operasional Teman Digital.
 - PHASE D — 3D Office: ✅ adaptive lobby
 - PHASE E — Automation & Workflow Engine: ✅
 - Security hardening: ✅
-- Owner bootstrap tooling: ✅ siap
-- Vercel: **belum di-import**. Akan dibuat sebagai project baru setelah owner + secret produksi siap.
+- Owner PIN login: ✅
+- Vercel: **belum di-import**. Akan dibuat sebagai project baru setelah secret produksi siap.
 
 ## Stack
 - Next.js 16.3.8
@@ -27,33 +27,27 @@ Salin `.env.example` menjadi `.env.local`.
 Runtime:
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY` — server-only
 - `GEMINI_API_KEY` — server-only
 - `GEMINI_MODEL=gemini-3.8-flash`
 - `AI_PROVIDER=gemini`
-- `SUPABASE_SERVICE_ROLE_KEY` — server-only, scheduler/admin task
-- `AUTOMATION_SECRET` — server-only, autentikasi scheduler
-
-Bootstrap sementara:
-- `OWNER_EMAIL`
-- `OWNER_PASSWORD`
+- `AUTOMATION_SECRET` — server-only
+- `OWNER_PIN` — server-only, login owner 6 digit
+- `OWNER_AUTH_EMAIL` — identitas Auth internal, tidak ditampilkan ke owner
 - `OWNER_NAME`
 
-Jangan commit credential/API key.
+Jangan commit credential/API key/PIN.
 
-## Menjalankan
-```bash
-npm install
-npm run dev
-```
+## Login
+Owner memakai PIN saja pada UI. Staff tetap dapat memakai email/password melalui menu **Akses staf**.
 
-## Owner bootstrap
-```bash
-npm run bootstrap:owner
-```
+Login owner:
+- 5 percobaan salah → lock 15 menit.
+- PIN tidak disimpan di source.
+- Setelah PIN valid, server membuat sesi Supabase menggunakan magic-link internal.
+- Role owner tetap diverifikasi melalui table `profiles` dan RLS.
 
 Detail: `docs/OWNER_BOOTSTRAP.md`.
-
-Aplikasi tidak menyediakan public sign-up. User internal baru default menjadi `staff`.
 
 ## Arsitektur AI
 ```
@@ -95,6 +89,10 @@ Desktop mendukung lobby 3D interaktif. Mobile/reduced-motion/perangkat rendah me
 - `20261004072516_automation_workflow_engine`
 - `20261004072557_automation_notification_dedupe`
 - `20261004073336_harden_automation_write_policies`
+- `20261004074305_owner_pin_auth`
+- `20261004074510_owner_pin_env_auth_hardening`
+- `20261004074557_owner_pin_db_verification`
+- `20261004074652_owner_pin_rate_limit_only`
 
 Rollback destruktif harus melalui review/approval owner.
 

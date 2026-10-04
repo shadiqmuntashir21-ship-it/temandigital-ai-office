@@ -1,34 +1,32 @@
-# Bootstrap Owner Pertama
+# Login Owner dengan PIN
 
-Kantor AI tidak menyediakan public sign-up.
+Owner tidak perlu memasukkan email atau password di UI.
 
-## Tujuan
-Membuat akun internal pertama dan menaikkan role-nya menjadi `owner` tanpa menaruh password di source code.
+## Cara kerja
 
-## Environment sementara
-Isi hanya pada environment lokal/rahasia:
+1. Owner memasukkan PIN 6 digit.
+2. PIN dibandingkan hanya pada server dengan secret `OWNER_PIN`.
+3. Supabase menyimpan counter percobaan dan lockout, bukan nilai PIN.
+4. Jika benar, server membuat magic-link token internal tanpa mengirim email.
+5. Token diverifikasi server-side untuk menghasilkan sesi Supabase yang valid.
+6. Profile internal otomatis dipastikan memiliki role `owner`.
+7. RLS tetap menjadi sumber otorisasi.
 
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `OWNER_EMAIL`
-- `OWNER_PASSWORD`
-- `OWNER_NAME`
+## Perlindungan brute force
 
-Lalu jalankan:
+- Maksimal 5 percobaan salah.
+- Setelah itu login owner dikunci 15 menit.
+- Fungsi rate-limit hanya dapat dipanggil menggunakan role server.
+- Staff/anon tidak memiliki execute permission.
 
-```bash
-npm run bootstrap:owner
+## Environment
+
+```
+OWNER_PIN=<secret 6 digit>
+OWNER_AUTH_EMAIL=owner.ai.office@temandigital.id
+OWNER_NAME=Owner Teman Digital
 ```
 
-Script akan:
-1. membuat user Supabase Auth jika belum ada,
-2. mengonfirmasi email,
-3. menggunakan trigger database untuk profile,
-4. mengubah profile menjadi `owner`,
-5. tidak mencetak password ke terminal.
+`OWNER_PIN` adalah server-only dan tidak boleh memakai prefix `NEXT_PUBLIC_`.
 
-Setelah berhasil, hapus `OWNER_PASSWORD` dari environment.
-
-Jangan commit file `.env.local`.
-
-Akun staff berikutnya tetap dibuat/invite melalui Supabase Auth dan default role-nya `staff`.
+Akun staff tetap memakai Supabase Auth email/password melalui opsi **Akses staf** pada halaman login.

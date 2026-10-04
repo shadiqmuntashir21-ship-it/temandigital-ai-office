@@ -1307,7 +1307,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      owner_pin_status: { Args: never; Returns: Json }
+      record_owner_pin_attempt: { Args: { p_success: boolean }; Returns: Json }
     }
     Enums: {
       agent_status:
