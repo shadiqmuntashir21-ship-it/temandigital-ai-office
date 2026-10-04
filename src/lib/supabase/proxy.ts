@@ -2,6 +2,8 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import type { Database } from "@/types/database";
 
+const OWNER_SESSION_COOKIE = "td_owner_session";
+
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
 
@@ -33,9 +35,13 @@ export async function updateSession(request: NextRequest) {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   const path = request.nextUrl.pathname;
-  const isPublic = path.startsWith("/login") || path.startsWith("/auth");
+  const ownerCookiePresent = Boolean(request.cookies.get(OWNER_SESSION_COOKIE)?.value);
+  const isPublic =
+    path.startsWith("/login") ||
+    path.startsWith("/auth") ||
+    path === "/api/health";
 
-  if (!claims && !isPublic) {
+  if (!claims && !ownerCookiePresent && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     url.search = "";
