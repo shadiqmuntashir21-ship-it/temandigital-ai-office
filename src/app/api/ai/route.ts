@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { getProfileContext } from "@/lib/auth/require-profile";
 import { runOfficeAI } from "@/lib/ai/orchestrator";
 import type { AgentSlug } from "@/lib/ai/types";
 
@@ -12,24 +12,13 @@ function isAgent(value: unknown): value is AgentSlug {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getClaims();
-    const userId = data?.claims?.sub;
+    const context = await getProfileContext();
 
-    if (!userId) {
+    if (!context) {
       return NextResponse.json({ error: "Sesi tidak valid." }, { status: 401 });
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("id, full_name, role, is_active")
-      .eq("id", userId)
-      .single();
-
-    if (profileError || !profile?.is_active) {
-      return NextResponse.json({ error: "Akun tidak aktif." }, { status: 403 });
-    }
-
+    const { supabase, profile } = context;
     const body = await request.json() as { message?: unknown; agent?: unknown };
     const message = typeof body.message === "string" ? body.message.trim() : "";
 
